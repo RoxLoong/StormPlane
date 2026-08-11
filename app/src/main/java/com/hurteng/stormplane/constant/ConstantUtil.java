@@ -11,6 +11,7 @@ public interface ConstantUtil {
     int TO_MAIN_VIEW = 7;
     int TO_END_VIEW = 8;
     int END_GAME = 9;
+    int ROLE_LEVEL_UP = 13; // 局内升级：通知宿主重新上报角色（等级/战力成长）
 
     int DIR_UP = 10;
     int DIR_DOWN = 11;

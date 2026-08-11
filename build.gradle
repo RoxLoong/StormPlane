@@ -1,16 +1,14 @@
+// 根构建脚本：升级到与自研 SDK 工程一致的 AGP 版本，接入 sdk-release.aar。
+// 依赖仓库：buildscript 使用镜像 + 官方回退；项目依赖在 settings.gradle.kts 的
+// dependencyResolutionManagement 统一声明。
 buildscript {
     repositories {
-        jcenter()
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
         google()
+        mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.0.0'
-    }
-}
-
-allprojects {
-    repositories {
-        jcenter()
-        google()
+        classpath 'com.android.tools.build:gradle:9.3.1'
     }
 }

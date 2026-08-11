@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.hurteng.stormplane.myplane"
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <uses-sdk
-        android:minSdkVersion="16"
-        android:targetSdkVersion="23" />
+    <!-- SDK 联调需要访问后台网关（http 明文，见 application usesCleartextTraffic）。 -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/planeicon"
         android:label="@string/app_name"
+        android:usesCleartextTraffic="true"
         android:theme="@style/AppTheme" >
         <activity
             android:name="com.hurteng.stormplane.MainActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name"
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -404,6 +404,11 @@ public class MainView extends BaseView {
 		// 提升等级
 		if (sumScore >= speedTime * GameConstant.LEVELUP_SCORE && speedTime < GameConstant.MAXGRADE) {
 			speedTime++;
+			// 真实玩法事件：局内升级，通知宿主重新上报角色（等级/战力随之成长）。
+			Message message = new Message();
+			message.what = ConstantUtil.ROLE_LEVEL_UP;
+			message.arg1 = speedTime;
+			mainActivity.getHandler().sendMessage(message);
 		}
 	}
 
@@ -658,7 +663,17 @@ public class MainView extends BaseView {
 		bulletScore += score; // 子弹的积分
 		bulletScore2 += score; // 子弹的积分
 		sumScore += score; // 游戏总得分
-		
+
+	}
+
+	// 返回当前局内总得分（供宿主上报角色时携带真实玩法数据）
+	public long getSumScore() {
+		return sumScore;
+	}
+
+	// 返回当前局内等级/速度倍率（供宿主上报角色时携带真实等级）
+	public int getGrade() {
+		return speedTime;
 	}
 
 	// 播放音效
