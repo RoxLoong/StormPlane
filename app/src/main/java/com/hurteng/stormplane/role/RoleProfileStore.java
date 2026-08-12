@@ -40,7 +40,7 @@ public class RoleProfileStore {
     private final SharedPreferences prefs;
     private final List<RoleProfile> roles = new ArrayList<>();
     private final List<String[]> servers; // {serverId, serverName}
-    private String activeRoleId;
+    private String activeCharId;
 
     public RoleProfileStore(Context context) {
         prefs = context.getSharedPreferences(PREF, Context.MODE_PRIVATE);
@@ -64,9 +64,9 @@ public class RoleProfileStore {
 
     /** 当前选中的角色；未设置当前角色或当前角色已不存在时返回 null。 */
     public RoleProfile getActiveRole() {
-        if (activeRoleId == null) return null;
+        if (activeCharId == null) return null;
         for (RoleProfile r : roles) {
-            if (r.getRoleId().equals(activeRoleId)) return r;
+            if (r.getCharId().equals(activeCharId)) return r;
         }
         return null;
     }
@@ -96,7 +96,7 @@ public class RoleProfileStore {
      */
     public RoleProfile setActiveForSub(String subAccountId) {
         RoleProfile r = findRoleForSub(subAccountId);
-        activeRoleId = r != null ? r.getRoleId() : null;
+        activeCharId = r != null ? r.getCharId() : null;
         save();
         return r;
     }
@@ -108,7 +108,7 @@ public class RoleProfileStore {
     public RoleProfile createRole(String roleName, String serverId, String serverName,
                                   String subAccountId, String subAccountName) {
         RoleProfile role = new RoleProfile();
-        role.setRoleId(UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        role.setCharId(UUID.randomUUID().toString().replace("-", "").substring(0, 16));
         role.setRoleName(roleName);
         role.setServerId(serverId);
         role.setServerName(serverName);
@@ -119,7 +119,7 @@ public class RoleProfileStore {
         role.setCreateTime(now);
         role.setLastLoginTime(now);
         roles.add(role);
-        activeRoleId = role.getRoleId();
+        activeCharId = role.getCharId();
         // 该区首次建角即「开服」：开服时间来自真实事件，按区服持久化。
         JSONObject opens = serverOpens();
         if (!opens.has(serverId)) {
@@ -131,10 +131,10 @@ public class RoleProfileStore {
     }
 
     /** 切换当前角色。 */
-    public void switchRole(String roleId) {
+    public void switchRole(String charId) {
         for (RoleProfile r : roles) {
-            if (r.getRoleId().equals(roleId)) {
-                activeRoleId = roleId;
+            if (r.getCharId().equals(charId)) {
+                activeCharId = charId;
                 save();
                 return;
             }
@@ -194,7 +194,7 @@ public class RoleProfileStore {
                 roles.clear();
             }
         }
-        activeRoleId = prefs.getString(KEY_ACTIVE, null);
+        activeCharId = prefs.getString(KEY_ACTIVE, null);
     }
 
     private void save() {
@@ -202,7 +202,7 @@ public class RoleProfileStore {
             JSONArray arr = new JSONArray();
             for (RoleProfile r : roles) arr.put(r.toJson());
             prefs.edit().putString(KEY_ROLES, arr.toString())
-                    .putString(KEY_ACTIVE, activeRoleId)
+                    .putString(KEY_ACTIVE, activeCharId)
                     .apply();
         } catch (Exception e) {
             Log.e(TAG, "角色档案保存失败", e);

@@ -12,12 +12,12 @@ import org.json.JSONObject;
  * 登录时间 = 每次进入游戏刷新。跨局累计分数（totalScore）按游戏自身的
  * 「每 {@code LEVELUP_SCORE} 分升一级、上限 {@code MAXGRADE}」规则推导等级与战力。
  *
- * <p>{@code roleId} 是后台小号下角色的 {@code charId}，上报时用于归属校验。
+ * <p>{@code charId} 是后台小号下角色的 {@code charId}，上报时用于归属校验。
  * 角色绑定到所属小号（{@code subAccountId}），切换小号后必须改用新小号的角色，
  * 不能沿用上一个小号的角色，否则归属校验会失败。</p>
  */
 public class RoleProfile {
-    private String roleId;          // 对应后台 charId
+    private String charId;          // 对应后台 charId
     private String roleName;
     private String serverId;
     private String serverName;
@@ -28,8 +28,8 @@ public class RoleProfile {
     private String lastLoginTime;   // 最近登录时间（真实事件：每次进入游戏）
     private long totalScore;        // 跨局累计分数（真实玩法数据）
 
-    public String getRoleId() { return roleId; }
-    public void setRoleId(String roleId) { this.roleId = roleId; }
+    public String getCharId() { return charId; }
+    public void setCharId(String charId) { this.charId = charId; }
     public String getRoleName() { return roleName; }
     public void setRoleName(String roleName) { this.roleName = roleName; }
     public String getServerId() { return serverId; }
@@ -52,7 +52,7 @@ public class RoleProfile {
     /** 序列化为 JSON 持久化。 */
     public JSONObject toJson() throws JSONException {
         return new JSONObject()
-                .put("roleId", roleId)
+                .put("charId", charId)
                 .put("roleName", roleName)
                 .put("serverId", serverId)
                 .put("serverName", serverName)
@@ -67,7 +67,7 @@ public class RoleProfile {
     /** 从持久化的 JSON 恢复。 */
     public static RoleProfile fromJson(JSONObject o) {
         RoleProfile r = new RoleProfile();
-        r.roleId = o.optString("roleId");
+        r.charId = o.optString("charId");
         r.roleName = o.optString("roleName");
         r.serverId = o.optString("serverId");
         r.serverName = o.optString("serverName");

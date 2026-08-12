@@ -268,7 +268,7 @@ public class MainActivity extends Activity {
         final long power = roleStore.powerOf(profile) + liveScore;
         RoleInfo role = new RoleInfo.Builder()
                 .serverId(profile.getServerId()).serverName(profile.getServerName())
-                .roleId(profile.getRoleId()).roleName(profile.getRoleName())
+                .charId(profile.getCharId()).roleName(profile.getRoleName())
                 .level(level).combatPower(power).vipLevel("0")
                 .openServerTime(profile.getOpenServerTime())
                 .createTime(profile.getCreateTime())
@@ -443,7 +443,7 @@ public class MainActivity extends Activity {
         new AlertDialog.Builder(this)
                 .setTitle("切换角色")
                 .setItems(names, (d, w) -> {
-                    roleStore.switchRole(list.get(w).getRoleId());
+                    roleStore.switchRole(list.get(w).getCharId());
                     updateRoleCard();
                     reportActiveRole("切换角色");
                     Toast.makeText(this, "已切换到：" + list.get(w).getRoleName(), Toast.LENGTH_SHORT).show();
@@ -483,7 +483,7 @@ public class MainActivity extends Activity {
         PayRequest request = new PayRequest.Builder()
                 .productName("复活道具")
                 .amountFen(100)
-                .roleId(active != null ? active.getRoleId() : "")
+                .charId(active != null ? active.getCharId() : "")
                 .build();
         BaiYouSdk.getInstance().pay(this, request, new PayCallback() {
             @Override public void onResult(PayResult result) {
