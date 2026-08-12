@@ -23,12 +23,14 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bycw.sdk.BaiYouSdk;
+import com.bycw.sdk.ChannelInfo;
 import com.bycw.sdk.LoginResult;
 import com.bycw.sdk.PayRequest;
 import com.bycw.sdk.PayResult;
 import com.bycw.sdk.RoleInfo;
 import com.bycw.sdk.SdkConfig;
 import com.bycw.sdk.SdkError;
+import com.bycw.sdk.callback.ExitCallback;
 import com.bycw.sdk.callback.InitCallback;
 import com.bycw.sdk.callback.LoginCallback;
 import com.bycw.sdk.callback.PayCallback;
@@ -78,6 +80,8 @@ public class MainActivity extends Activity {
     /** 角色卡片上的「新建角色」「切换角色」按钮。 */
     private Button newRoleButton;
     private Button switchRoleButton;
+    /** 角色卡片底部的渠道信息行：custId / inviteCode（展示 SDK getChannelInfo）。 */
+    private TextView channelLine;
 
     @SuppressLint("HandlerLeak")
     private Handler handler = new Handler() {
@@ -153,6 +157,7 @@ public class MainActivity extends Activity {
         BaiYouSdk.getInstance().initialize(this, config, new InitCallback() {
             @Override public void onSuccess() {
                 Log.i(TAG, "SDK 初始化完成");
+                updateChannelLine();
                 if (BaiYouSdk.getInstance().isLoggedIn()) {
                     onLoggedIn();
                 } else {
@@ -310,7 +315,22 @@ public class MainActivity extends Activity {
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         switchLp.setMargins(dp(10), 0, 0, 0);
         buttons.addView(switchRoleButton, switchLp);
+        Button logoutButton = makeCardButton("退出登录");
+        logoutButton.setOnClickListener(v -> showLogoutDialog());
+        LinearLayout.LayoutParams logoutLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        logoutLp.setMargins(dp(10), 0, 0, 0);
+        buttons.addView(logoutButton, logoutLp);
         roleCardPanel.addView(buttons);
+
+        // 渠道信息行：展示 SDK getChannelInfo()（custId / inviteCode），初始化完成后填充。
+        channelLine = new TextView(this);
+        channelLine.setTextColor(Color.argb(200, 255, 255, 255));
+        channelLine.setTextSize(10);
+        channelLine.setGravity(Gravity.CENTER);
+        channelLine.setPadding(0, dp(6), 0, 0);
+        roleCardPanel.addView(channelLine);
+        updateChannelLine();
 
         FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.WRAP_CONTENT, FrameLayout.LayoutParams.WRAP_CONTENT,
@@ -478,6 +498,43 @@ public class MainActivity extends Activity {
         });
     }
 
+    /** 退出登录：确认后调用 SDK logout，复位角色卡为「未登录」（登出是宿主展示项，SDK 自身 UI 不提供登出按钮）。 */
+    private void showLogoutDialog() {
+        if (!BaiYouSdk.getInstance().isLoggedIn()) {
+            Toast.makeText(this, "当前未登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("退出登录")
+                .setMessage("确认退出当前账号吗？")
+                .setPositiveButton("退出", (d, w) -> {
+                    BaiYouSdk.getInstance().logout(new ResultCallback() {
+                        @Override public void onSuccess() {
+                            // 登出回调在主线程：SDK 已清理本地会话并隐藏悬浮球，宿主复位角色卡。
+                            roleStore.setActiveForSub("");
+                            if (roleCard != null) roleCard.setText("未登录");
+                            Toast.makeText(MainActivity.this, "已退出登录", Toast.LENGTH_SHORT).show();
+                        }
+                        @Override public void onFailure(SdkError error) {
+                            Toast.makeText(MainActivity.this,
+                                    "退出登录失败：" + error.getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
+    /** 刷新渠道信息行：SDK 初始化后读取 getChannelInfo() 展示 custId / inviteCode。 */
+    private void updateChannelLine() {
+        if (channelLine == null) return;
+        ChannelInfo info = BaiYouSdk.getInstance().getChannelInfo();
+        String text = (info == null || info.getCustId().length() == 0)
+                ? "未写入渠道数据"
+                : "custId: " + info.getCustId() + "  inviteCode: " + info.getInviteCode();
+        channelLine.setText(text);
+    }
+
     /**
      * 进入游戏界面
      */
@@ -489,6 +546,8 @@ public class MainActivity extends Activity {
         readyView = null;
         endView = null;
         if (reviveButton != null) reviveButton.setVisibility(View.GONE);
+        // 进入战斗隐藏悬浮球，避免遮挡游戏画面；回到结算/准备界面再恢复。
+        BaiYouSdk.getInstance().hideFloating();
     }
 
     /**
@@ -503,6 +562,8 @@ public class MainActivity extends Activity {
         }
         swapGameView(endView);
         mainView = null;
+        // 战斗结束回到结算界面，恢复悬浮球入口（悬浮球随界面状态显示/隐藏）。
+        BaiYouSdk.getInstance().showFloating(this);
         // 真实玩法事件：一局结束，累计分数 → 重报角色。
         RoleProfile active = roleStore.getActiveRole();
         if (active != null) {
@@ -556,21 +617,17 @@ public class MainActivity extends Activity {
     }
 
     /**
-     * 双击退出函数
+     * 返回键统一走 SDK 退出确认框：由 BaiYouSdk.exit() 弹「退出游戏」确认，不再裸 System.exit。
+     * 确认回调 onConfirm 里结束宿主；取消（继续游戏）不做事。
      */
-    private long firstTime = 0;
-
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (DebugConstant.DOUBLECLICK_EXIT) {
             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
-                if (System.currentTimeMillis() - firstTime > 2000) {
-                    Toast.makeText(MainActivity.this, "再按一次退出程序", Toast.LENGTH_SHORT).show();
-                    firstTime = System.currentTimeMillis();
-                } else {
-                    finish();
-                    System.exit(0);
-                }
+                BaiYouSdk.getInstance().exit(this, new ExitCallback() {
+                    @Override public void onCancel() { }
+                    @Override public void onConfirm() { finish(); }
+                });
                 return true;
             }
         }
