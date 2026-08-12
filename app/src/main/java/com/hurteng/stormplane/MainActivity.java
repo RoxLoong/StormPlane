@@ -498,6 +498,42 @@ public class MainActivity extends Activity {
         });
     }
 
+    /** 购买大招入口：点击游戏内左下角导弹计数旁的"+"按钮，1 元 = 10 颗导弹。
+     *  弹确认框防误触；支付成功回调后追加导弹（不受收集上限约束）。 */
+    public void startMissilePay() {
+        if (paying) return;
+        if (!BaiYouSdk.getInstance().isLoggedIn()) {
+            Toast.makeText(this, "请先登录", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        new AlertDialog.Builder(this)
+                .setTitle("购买大招")
+                .setMessage("花费 1 元购买 10 颗大招，确认支付？")
+                .setPositiveButton("确认支付", (d, w) -> {
+                    d.dismiss();
+                    paying = true;
+                    RoleProfile active = roleStore.getActiveRole();
+                    PayRequest request = new PayRequest.Builder()
+                            .productName("大招补给")
+                            .amountFen(100)
+                            .charId(active != null ? active.getCharId() : "")
+                            .build();
+                    BaiYouSdk.getInstance().pay(this, request, new PayCallback() {
+                        @Override public void onResult(PayResult result) {
+                            paying = false;
+                            if (result.getStatus() == PayResult.Status.SUCCESS) {
+                                Toast.makeText(MainActivity.this, "购买成功，获得 10 颗大招", Toast.LENGTH_SHORT).show();
+                                if (mainView != null) mainView.addMissile(10);
+                            } else {
+                                Toast.makeText(MainActivity.this, result.getMessage(), Toast.LENGTH_LONG).show();
+                            }
+                        }
+                    });
+                })
+                .setNegativeButton("取消", null)
+                .show();
+    }
+
     /** 退出登录：确认后调用 SDK logout，复位角色卡为「未登录」（登出是宿主展示项，SDK 自身 UI 不提供登出按钮）。 */
     private void showLogoutDialog() {
         if (!BaiYouSdk.getInstance().isLoggedIn()) {

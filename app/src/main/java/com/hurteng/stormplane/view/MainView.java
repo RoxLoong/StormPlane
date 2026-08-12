@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.RectF;
 import android.media.MediaPlayer;
 import android.os.Message;
 import android.view.MotionEvent;
@@ -51,6 +52,7 @@ public class MainView extends BaseView {
 	private float play_bt_w;
 	private float play_bt_h;
 	private float missile_bt_y;
+	private RectF buyMissileRect; // 购买大招入口（导弹计数右侧"+"按钮）的命中区域
 	private boolean isPlay; // 标记游戏运行状态
 	private boolean isTouchPlane; // 判断玩家是否按下屏幕
 
@@ -241,6 +243,13 @@ public class MainView extends BaseView {
 				}
 				return true;
 			}
+			// 判断购买大招入口是否被按下：点击导弹计数/右侧"+"按钮，发起 1 元=10 颗的购买
+			else if (buyMissileRect != null && buyMissileRect.contains(x, y)) {
+				if (isPlay) {
+					mainActivity.startMissilePay();
+				}
+				return true;
+			}
 		}
 		// 响应手指在屏幕移动的事件
 		else if (event.getAction() == MotionEvent.ACTION_MOVE
@@ -275,6 +284,11 @@ public class MainView extends BaseView {
 			}
 		}
 		return false;
+	}
+
+	/** 购买大招支付成功后追加导弹数量（不受收集上限约束）。 */
+	public void addMissile(int n) {
+		missileCount += n;
 	}
 
 	// 初始化图片资源方法
@@ -506,14 +520,26 @@ public class MainView extends BaseView {
 
 			}
 
-			// 绘制导弹按钮
-			if (missileCount > 0) {
-				paint.setTextSize(40);
-				paint.setColor(Color.BLACK);
-				canvas.drawBitmap(missile_bt, 10, missile_bt_y, paint);
-				canvas.drawText("X " + String.valueOf(missileCount),
-						10 + missile_bt.getWidth(), screen_height - 25, paint);// 绘制文字
-			}
+			// 绘制导弹按钮（点击图标放导弹）与计数；计数+右侧"+"构成购买大招入口
+			paint.setTextSize(40);
+			paint.setColor(Color.BLACK);
+			canvas.drawBitmap(missile_bt, 10, missile_bt_y, paint);
+			float missileTextX = 10 + missile_bt.getWidth();
+			String missileText = "X " + missileCount;
+			float buyBtnW = 64;
+			float buyBtnH = missile_bt.getHeight();
+			float buyBtnY = missile_bt_y;
+			float buyBtnX = missileTextX + paint.measureText(missileText) + 16;
+			buyMissileRect = new RectF(missileTextX - 8, buyBtnY,
+					buyBtnX + buyBtnW, buyBtnY + buyBtnH);
+			paint.setColor(Color.argb(220, 255, 198, 35));
+			canvas.drawRoundRect(buyMissileRect, 12, 12, paint);
+			paint.setColor(Color.BLACK);
+			canvas.drawText(missileText, missileTextX, screen_height - 25, paint);
+			paint.setTextSize(46);
+			String plus = "+";
+			canvas.drawText(plus, buyBtnX + (buyBtnW - paint.measureText(plus)) / 2,
+					buyBtnY + buyBtnH / 2 + 16, paint);
 
 			// 绘制导弹物品
 			if (missileGoods.isAlive()) {
