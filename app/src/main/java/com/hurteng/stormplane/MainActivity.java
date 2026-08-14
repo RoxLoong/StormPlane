@@ -138,9 +138,11 @@ public class MainActivity extends Activity {
                 runOnUiThread(() -> Toast.makeText(MainActivity.this,
                         "小号已切换，已改用该小号角色上报", Toast.LENGTH_SHORT).show());
             } else {
+                // 平台账号切换/登出/改密码强制重登（本地会话已清理）：复位角色卡并立即拉起登录页。
                 runOnUiThread(() -> {
                     if (roleCard != null) roleCard.setText("未登录");
                 });
+                ensureLogin();
             }
         });
     }
