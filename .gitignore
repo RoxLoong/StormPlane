@@ -59,3 +59,5 @@ freeline_project_description.json
 
 # 构建产物（工程根目录误放/复制的 APK，正规产物在 app/build 下）
 *.apk
+# apksigner 签名副产物
+*.idsig
