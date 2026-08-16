@@ -30,7 +30,6 @@ import com.bycw.sdk.PayResult;
 import com.bycw.sdk.RoleInfo;
 import com.bycw.sdk.SdkConfig;
 import com.bycw.sdk.SdkError;
-import com.bycw.sdk.callback.ExitCallback;
 import com.bycw.sdk.callback.InitCallback;
 import com.bycw.sdk.callback.LoginCallback;
 import com.bycw.sdk.callback.PayCallback;
@@ -654,18 +653,21 @@ public class MainActivity extends Activity {
         return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
-    /**
-     * 返回键统一走 SDK 退出确认框：由 BaiYouSdk.exit() 弹「退出游戏」确认，不再裸 System.exit。
-     * 确认回调 onConfirm 里结束宿主；取消（继续游戏）不做事。
-     */
+    /** 返回键：双击退出游戏。SDK 已移除 exit() 确认框 API，改为宿主侧两击退出。 */
+    private long lastBackPressed;
+    private static final long BACK_EXIT_INTERVAL_MILLIS = 2000L;
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (DebugConstant.DOUBLECLICK_EXIT) {
             if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
-                BaiYouSdk.getInstance().exit(this, new ExitCallback() {
-                    @Override public void onCancel() { }
-                    @Override public void onConfirm() { finish(); }
-                });
+                long now = System.currentTimeMillis();
+                if (now - lastBackPressed <= BACK_EXIT_INTERVAL_MILLIS) {
+                    finish();
+                } else {
+                    lastBackPressed = now;
+                    Toast.makeText(this, "再按一次退出游戏", Toast.LENGTH_SHORT).show();
+                }
                 return true;
             }
         }
