@@ -151,8 +151,6 @@ public class MainActivity extends Activity {
         SdkConfig config = new SdkConfig.Builder()
                 .appId(BuildConfig.BYCW_APP_ID)
                 .clientKey(BuildConfig.BYCW_CLIENT_KEY)
-                // 联调后台当前关闭签名校验，SDK 自动走明文 JSON/query。
-                .signatureEnabled(false)
                 .debug(true)
                 .build();
         BaiYouSdk.getInstance().initialize(this, config, new InitCallback() {
