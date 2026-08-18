@@ -45,6 +45,7 @@ import com.hurteng.stormplane.view.MainView;
 import com.hurteng.stormplane.view.ReadyView;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * 沙漠风暴（打飞机）宿主：原版自绘 SurfaceView 游戏流程保持不变，
@@ -478,10 +479,14 @@ public class MainActivity extends Activity {
         if (paying) return;
         paying = true;
         RoleProfile active = roleStore.getActiveRole();
+        // 游戏方订单号（必填）：宿主游戏侧生成，用于对账/防重复下单；示例随机生成。
+        String gameOrderNo = UUID.randomUUID().toString().replace("-", "");
+        Log.i(TAG, "支付游戏方订单号 gameOrderNo=" + gameOrderNo);
         PayRequest request = new PayRequest.Builder()
                 .productName("复活道具")
                 .amountFen(100)
                 .charId(active != null ? active.getCharId() : "")
+                .gameOrderNo(gameOrderNo)
                 .build();
         BaiYouSdk.getInstance().pay(this, request, new PayCallback() {
             @Override public void onResult(PayResult result) {
@@ -511,10 +516,14 @@ public class MainActivity extends Activity {
                     d.dismiss();
                     paying = true;
                     RoleProfile active = roleStore.getActiveRole();
+                    // 游戏方订单号（必填）：宿主游戏侧生成，用于对账/防重复下单；示例随机生成。
+                    String gameOrderNo = UUID.randomUUID().toString().replace("-", "");
+                    Log.i(TAG, "支付游戏方订单号 gameOrderNo=" + gameOrderNo);
                     PayRequest request = new PayRequest.Builder()
                             .productName("大招补给")
                             .amountFen(100)
                             .charId(active != null ? active.getCharId() : "")
+                            .gameOrderNo(gameOrderNo)
                             .build();
                     BaiYouSdk.getInstance().pay(this, request, new PayCallback() {
                         @Override public void onResult(PayResult result) {
