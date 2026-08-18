@@ -119,7 +119,6 @@ public class MainActivity extends Activity {
         buildRoleCard();
         // 监听 SDK 账号切换：切小号后重新绑定该小号的角色并上报，不能沿用上一个小号的角色。
         registerAccountChangedListener();
-
         initSdk();
     }
 
